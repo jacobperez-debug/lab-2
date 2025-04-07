@@ -31,7 +31,7 @@ Gallup World Poll:
 story of this graph in words. That is, what is this graph telling you? What do
 you think the authors meant to convey with it?
 
-
+This graph seems to plot the distribution of the percentage of people who believe vaccines are safe for each country. The distributions are separated by continents with a horizontal median bar displayed for each continent. I believe the message of this graph is supposed to show which continents believe in vaccines the most as the graph is organized from highest median percentage per continent to lowest median percentage. The graph also labels the extreme values in each continent, which are the countries, so you can see by continent which countries have the lowest and the highest percentage. 
 
 2. List the variables that appear to be displayed in this visualization. 
 *Hint: Variables refer to columns in the data.*
