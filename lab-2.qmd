@@ -36,7 +36,7 @@ This graph seems to plot the distribution of the percentage of people who believ
 2. List the variables that appear to be displayed in this visualization. 
 *Hint: Variables refer to columns in the data.*
 
-
+The columns seem to be continent, country, and percent who believe vaccines are safe.
 
 3. Now that you're versed in the grammar of graphics (e.g., `ggplot`), list the *aesthetics* used and which *variables* are mapped to each.
 
@@ -45,12 +45,12 @@ This graph seems to plot the distribution of the percentage of people who believ
 4. What type of graph would you call this? Meaning, what `geom` would you use
 to produce this plot?
 
-
+This would be a geom_point() graph or a dot plot. It seems to be dot plots of each continent stacked on top of each other.
 
 5. Provide at least four problems or changes that would improve this graph. 
 *Please format your changes as bullet points!*
 
-
+The first change I would make would be to remove the legend as there is no need since it is labeled on the graphs. 
 
 ## Improving the Bad Visualization
 
@@ -63,8 +63,11 @@ them in separately, but you may also just use one if it suffices.
 
 ```{r}
 #| label: read-in-wellcome-data
+library(readxl)
 
+wgm2018 <- read_excel(here::here("wgm2018-dataset-crosstabs-all-countries.xlsx"), sheet = 2)
 
+wgm20183 <- read_excel(here::here("wgm2018-dataset-crosstabs-all-countries.xlsx"), sheet = 3)
 ```
 
 6. Improve the visualization above by either re-creating it with the issues you
@@ -74,7 +77,59 @@ same story better.
 ```{r}
 #| label: new-and-improved-visualization
 
+library(tidyverse)
 
+df_raw <- tibble(x = str_split(wgm20183$`Variable Type & Codes*`[1], ',\\s')[[1]])
+
+df_countries <- df_raw |>
+  separate_wider_delim(x, delim = '=', names = c("country_id", "country_name")) |>
+  mutate(country_id = as.numeric(country_id))
+```
+
+```{r}
+#| label: join two datasets
+
+wgm2018_joined <-  left_join(wgm2018, df_countries, by = c("WP5" = "country_id")) |>
+  mutate(region = case_when(
+    Regions_Report %in% c(1, 2, 4, 5) ~ "Africa",
+    Regions_Report %in% c(6, 7, 8) ~ "Americas",
+    Regions_Report %in% c(9, 10, 11, 12, 18) ~ "Asia",
+    Regions_Report %in% c(3, 13) ~ "Middle East and North Africa",
+    Regions_Report %in% c(14) ~ "Former Soviet Union",
+    Regions_Report %in% c(15, 16, 17, 0) ~ "Europe"
+  )) |>
+  select(country_name, region, wgt, PROJWT, Q25)
+```
+
+```{r}
+#| label: summarize proporitons
+
+summary_df <- wgm2018_joined |>
+  filter(!is.na(Q25)) |>
+  group_by(country_name, region) |>
+  summarise(
+    total_responses = n(),
+    count = sum(Q25 %in% c(1, 2)),
+    prop = count / total_responses
+  ) |>
+  select(country_name, region, prop)
+```
+
+```{r}
+ggplot(summary_df, aes(x = prop, y = country_name)) +
+  geom_point(color = "black", size = 2.5) +
+  facet_wrap(~ region, scales = "free_y") +
+  labs(
+    x = "% of people who responded 1 or 2",
+    y = NULL,
+    title = "Belief in Vaccine Safety by Country and Region",
+    subtitle = "Proportion of responses that were 1 or 2 on Q25 (e.g., 'Strongly agree')"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    strip.text = element_text(face = "bold"),
+    panel.spacing = unit(1, "lines")
+  )
 ```
 
 # Part Two: Broad Visualization Improvement
