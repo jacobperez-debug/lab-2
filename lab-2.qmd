@@ -112,24 +112,59 @@ summary_df <- wgm2018_joined |>
     count = sum(Q25 %in% c(1, 2)),
     prop = count / total_responses
   ) |>
-  select(country_name, region, prop)
+  select(country_name, region, prop) %>%
+  mutate(country_name = if_else(country_name == "Northern Cyprus,", "Northern Cyprus", country_name))
 ```
 
 ```{r}
-ggplot(summary_df, aes(x = prop, y = country_name)) +
-  geom_point(color = "black", size = 2.5) +
-  facet_wrap(~ region, scales = "free_y") +
+region_medians <- summary_df %>%
+  group_by(region) %>%
+  summarise(median_prop = median(prop, na.rm = TRUE))
+
+labels <- summary_df %>%
+  group_by(region) %>%
+  arrange(prop) %>%
+  slice_head(n = 3) %>%
+  bind_rows(
+    summary_df %>%
+      group_by(region) %>%
+      arrange(desc(prop)) %>%
+      slice_head(n = 3))
+```
+
+
+```{r}
+#| label: improving the bad visualization
+
+ggplot(summary_df, aes(x = prop, y = country_name, color = region)) +
+  geom_point() +
+  geom_vline(data = region_medians, 
+             aes(xintercept = median_prop),
+             color = "black",
+             linetype = "twodash") + 
+  geom_text(data = region_medians,
+          aes(x = median_prop, y = 1,
+              label = paste0(round(median_prop * 100, 1), "%")),
+          color = "black",
+          size = 3) +
+  facet_wrap(~ region, scales = "fixed") +
   labs(
-    x = "% of people who responded 1 or 2",
+    x = "% of people who believe vaccines are safe",
     y = NULL,
-    title = "Belief in Vaccine Safety by Country and Region",
-    subtitle = "Proportion of responses that were 1 or 2 on Q25 (e.g., 'Strongly agree')"
+    title = "Belief in Vaccine Safety by Country and Region"
   ) +
   theme_minimal(base_size = 12) +
   theme(
+    plot.margin = margin(4, 60, 4, 4),
     strip.text = element_text(face = "bold"),
-    panel.spacing = unit(1, "lines")
-  )
+    panel.spacing = unit(1, "lines"),
+    legend.position = "none",
+    axis.text.y = element_blank()
+  ) +
+  geom_text(data = labels,
+            aes(label = country_name),
+            hjust = -0.1, size = 3, color = "black") +
+  coord_cartesian(clip = "off")
 ```
 
 # Part Two: Broad Visualization Improvement
