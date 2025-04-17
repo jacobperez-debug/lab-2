@@ -2,55 +2,48 @@
 title: "Lab 2"
 subtitle: "Advanced Data Visualization"
 editor: source
+  markdown: 
+    wrap: 72
+execute: 
+  warning: false
 ---
 
 # Instructions
 
 **Create a Quarto file for ALL Lab 2 (no separate files for Parts 1 and 2).**
 
-- Make sure your final file is carefully formatted, so that each analysis is
-clear and concise.
-- Be sure your knitted `.html` file shows **all** your source code, including
-any function definitions. 
+-   Make sure your final file is carefully formatted, so that each analysis is clear and concise.
+-   Be sure your knitted `.html` file shows **all** your source code, including any function definitions.
 
 # Part One: Identifying Bad Visualizations
 
-If you happen to be bored and looking for a sensible chuckle, you should check
-out these [Bad Visualisations](https://badvisualisations.tumblr.com/). Looking through these is also a good exercise in cataloging what makes a visualization
-good or bad. 
+If you happen to be bored and looking for a sensible chuckle, you should check out these [Bad Visualisations](https://badvisualisations.tumblr.com/). Looking through these is also a good exercise in cataloging what makes a visualization good or bad.
 
 ## Dissecting a Bad Visualization
 
-Below is an example of a less-than-ideal visualization from the collection
-linked above. It comes to us from data provided for the [Wellcome Global Monitor 2018 report](https://wellcome.ac.uk/reports/wellcome-global-monitor/2018) by the 
-Gallup World Poll:
+Below is an example of a less-than-ideal visualization from the collection linked above. It comes to us from data provided for the [Wellcome Global Monitor 2018 report](https://wellcome.ac.uk/reports/wellcome-global-monitor/2018) by the Gallup World Poll:
 
 ![](images/bad-wellcome-graph.jpg)
 
-1. While there are certainly issues with this image, do your best to tell the
-story of this graph in words. That is, what is this graph telling you? What do
-you think the authors meant to convey with it?
+1.  While there are certainly issues with this image, do your best to tell the story of this graph in words. That is, what is this graph telling you? What do you think the authors meant to convey with it?
 
-This graph seems to plot the distribution of the percentage of people who believe vaccines are safe for each country. The distributions are separated by continents with a horizontal median bar displayed for each continent. I believe the message of this graph is supposed to show which continents believe in vaccines the most as the graph is organized from highest median percentage per continent to lowest median percentage. The graph also labels the extreme values in each continent, which are the countries, so you can see by continent which countries have the lowest and the highest percentage. 
+This graph seems to plot the distribution of the percentage of people who believe vaccines are safe for each country. The distributions are separated by continents with a horizontal median bar displayed for each continent. I believe the message of this graph is supposed to show which continents believe in vaccines the most as the graph is organized from highest median percentage per continent to lowest median percentage. The graph also labels the extreme values in each continent, which are the countries, so you can see by continent which countries have the lowest and the highest percentage.
 
-2. List the variables that appear to be displayed in this visualization. 
-*Hint: Variables refer to columns in the data.*
+2.  List the variables that appear to be displayed in this visualization. *Hint: Variables refer to columns in the data.*
 
 The columns seem to be continent, country, and percent who believe vaccines are safe.
 
-3. Now that you're versed in the grammar of graphics (e.g., `ggplot`), list the *aesthetics* used and which *variables* are mapped to each.
+3.  Now that you're versed in the grammar of graphics (e.g., `ggplot`), list the *aesthetics* used and which *variables* are mapped to each.
 
+So the x aesthetic seems to have % of people who believe vaccines are safe. The y aesthetic seems to be country. There is also a color aesthetic that seems to have the region variable mapped to it.
 
-
-4. What type of graph would you call this? Meaning, what `geom` would you use
-to produce this plot?
+4.  What type of graph would you call this? Meaning, what `geom` would you use to produce this plot?
 
 This would be a geom_point() graph or a dot plot. It seems to be dot plots of each continent stacked on top of each other.
 
-5. Provide at least four problems or changes that would improve this graph. 
-*Please format your changes as bullet points!*
+5.  Provide at least four problems or changes that would improve this graph. *Please format your changes as bullet points!*
 
-The first change I would make would be to remove the legend as there is no need since it is labeled on the graphs. 
+The first change I would make would be to remove the legend as there is no need since it is labeled on the graphs.
 
 ## Improving the Bad Visualization
 
@@ -58,8 +51,7 @@ The data for the Wellcome Global Monitor 2018 report can be downloaded at the fo
 
 <!-- at the "Dataset and crosstabs for all countries" link on the right side of the page-->
 
-There are two worksheets in the downloaded dataset file. You may need to read
-them in separately, but you may also just use one if it suffices.
+There are two worksheets in the downloaded dataset file. You may need to read them in separately, but you may also just use one if it suffices.
 
 ```{r}
 #| label: read-in-wellcome-data
@@ -70,14 +62,13 @@ wgm2018 <- read_excel(here::here("wgm2018-dataset-crosstabs-all-countries.xlsx")
 wgm20183 <- read_excel(here::here("wgm2018-dataset-crosstabs-all-countries.xlsx"), sheet = 3)
 ```
 
-6. Improve the visualization above by either re-creating it with the issues you
-identified fixed OR by creating a new visualization that you believe tells the
-same story better.
+6.  Improve the visualization above by either re-creating it with the issues you identified fixed OR by creating a new visualization that you believe tells the same story better.
 
 ```{r}
 #| label: new-and-improved-visualization
 
 library(tidyverse)
+library(gganimate)
 
 df_raw <- tibble(x = str_split(wgm20183$`Variable Type & Codes*`[1], ',\\s')[[1]])
 
@@ -98,7 +89,7 @@ wgm2018_joined <-  left_join(wgm2018, df_countries, by = c("WP5" = "country_id")
     Regions_Report %in% c(14) ~ "Former Soviet Union",
     Regions_Report %in% c(15, 16, 17, 0) ~ "Europe"
   )) |>
-  select(country_name, region, wgt, PROJWT, Q25)
+  select(country_name, region, wgt, PROJWT, Q25, Q9, Q8, Q6)
 ```
 
 ```{r}
@@ -117,6 +108,8 @@ summary_df <- wgm2018_joined |>
 ```
 
 ```{r}
+#| label: improving the bad visualization (part 1)
+
 region_medians <- summary_df %>%
   group_by(region) %>%
   summarise(median_prop = median(prop, na.rm = TRUE))
@@ -132,111 +125,264 @@ labels <- summary_df %>%
       slice_head(n = 3))
 ```
 
-
 ```{r}
-#| label: improving the bad visualization
+#| label: improving the bad visualization (part 2)
 
-ggplot(summary_df, aes(x = prop, y = country_name, color = region)) +
+p <- ggplot(summary_df, aes(x = prop, y = country_name, color = region)) +
   geom_point() +
   geom_vline(data = region_medians, 
              aes(xintercept = median_prop),
              color = "black",
-             linetype = "twodash") + 
+             linetype = "twodash",
+             size = 0.3,
+             alpha = 0.8) + 
   geom_text(data = region_medians,
-          aes(x = median_prop, y = 1,
-              label = paste0(round(median_prop * 100, 1), "%")),
+          aes(x = median_prop, 
+              y = Inf,
+              label = paste0("Median: ", round(median_prop * 100, 1), "%")),
           color = "black",
-          size = 3) +
-  facet_wrap(~ region, scales = "fixed") +
+          size = 3,
+          fontface = "bold") +
   labs(
     x = "% of people who believe vaccines are safe",
     y = NULL,
-    title = "Belief in Vaccine Safety by Country and Region"
+    title = "Belief in Vaccine Safety - {closest_state}"
   ) +
   theme_minimal(base_size = 12) +
   theme(
     plot.margin = margin(4, 60, 4, 4),
-    strip.text = element_text(face = "bold"),
-    panel.spacing = unit(1, "lines"),
     legend.position = "none",
     axis.text.y = element_blank()
   ) +
   geom_text(data = labels,
             aes(label = country_name),
-            hjust = -0.1, size = 3, color = "black") +
-  coord_cartesian(clip = "off")
+            hjust = 0, 
+            size = 3, 
+            color = "black",
+            nudge_x = 0.015) +
+  coord_cartesian(clip = "off") + 
+  scale_color_brewer(palette = "Set2") + 
+  transition_states(region, 
+                    transition_length = 2,
+                    state_length = 2) + 
+  ease_aes('cubic-in-out')
+
+anim <- animate(p, renderer = gifski_renderer())
+anim_save("vaccine.gif", animation = anim)
+
+knitr::include_graphics("vaccine.gif")
 ```
 
 # Part Two: Broad Visualization Improvement
 
-The full Wellcome Global Monitor 2018 report can be found here: [https://wellcome.ac.uk/sites/default/files/wellcome-global-monitor-2018.pdf](https://wellcome.ac.uk/sites/default/files/wellcome-global-monitor-2018.pdf). 
-Surprisingly, the visualization above does not appear in the report despite the
-citation in the bottom corner of the image!
+The full Wellcome Global Monitor 2018 report can be found here: <https://wellcome.ac.uk/sites/default/files/wellcome-global-monitor-2018.pdf>. Surprisingly, the visualization above does not appear in the report despite the citation in the bottom corner of the image!
 
 ## Second Data Visualization Improvement
 
 **For this second plot, you must select a plot that uses maps so you can demonstrate your proficiency with the `leaflet` package!**
 
-7. Select a data visualization in the report that you think could be improved. 
-Be sure to cite both the page number and figure title. Do your best to tell the
-story of this graph in words. That is, what is this graph telling you? What do
-you think the authors meant to convey with it?
+7.  Select a data visualization in the report that you think could be improved. Be sure to cite both the page number and figure title. Do your best to tell the story of this graph in words. That is, what is this graph telling you? What do you think the authors meant to convey with it?
 
+I decided to choose the map called: Map of interest in knowing more about medicine, disease or health by country. This map is on page 39. This map shows a global view of public interest in learning more about medicine, disease, or health, based on the percentage of people in each country who responded "yes" to the question: "Would you, personally, like to know more about medicine, disease or health?" The map reveals that the highest interest in health knowledge seems to be in countries across South Asia, the Middle East, parts of Latin America, and Southern Africe.
 
+8.  List the variables that appear to be displayed in this visualization.
 
-8. List the variables that appear to be displayed in this visualization.
+The variables seem to be the country and then the interest level in health knowledge seems to be the other variable.
 
+9.  Now that you're versed in the grammar of graphics (ggplot), list the aesthetics used and which variables are specified for each.
 
-
-9. Now that you're versed in the grammar of graphics (ggplot), list the
-aesthetics used and which variables are specified for each.
-
-
+I think the most notable aesthetic would be the color scale with a gradient fill.
 
 10. What type of graph would you call this?
 
+This is a map, by showing the whole world and countries colored in with no true x or y axis labels.
 
+11. List all of the problems or things you would improve about this graph.
 
-11. List all of the problems or things you would improve about this graph.  
+I think one possible improvement could be to use a more accessible/contrasting palette. The green gradient at times makes it hard to find the separate percentages in regions. It would be nice to make it interactive with exact percentages for each country on a hover.
 
 12. Improve the visualization above by either re-creating it with the issues you identified fixed OR by creating a new visualization that you believe tells the same story better.
 
 ```{r}
-#| label: second-improved-visualization
+#|label: cleaning data for leaflet
 
+leaflet_df <- wgm2018_joined |>
+  filter(!is.na(Q9)) |>
+  group_by(country_name, region) |>
+  summarise(
+    total_responses = n(),
+    count = sum(Q9 == 1),
+    prop = count / total_responses
+  ) |>
+  select(country_name, region, prop) %>%
+  mutate(country_name = if_else(country_name == "Northern Cyprus,", "Northern Cyprus", country_name))
+```
 
+```{r}
+#| label: second-improved-visualization (part 1)
+
+library(leaflet)
+library(sf)
+library(rnaturalearth)
+library(dplyr)
+
+world_sf <- ne_countries(scale = "medium", returnclass = "sf")
+
+country_names <- tibble::tibble(
+  country_name = c("Bosnia and Herzegovina", "Czech Republic", "Dominican Republic", "Eswatini", "Ivory Coast", "Macedonia", "Northern Cyprus", "Palestinian Territories", "Republic of Congo", "The Gambia", "United States"),
+  name = c("Bosnia and Herz.", "Czechia", "Dominican Rep.", "eSwatini", "Côte d'Ivoire", "North Macedonia", "N. Cyprus", "Palestine", "Congo", "Gambia", "United States of America")
+)
+
+leaflet_df <- leaflet_df %>%
+  left_join(country_names, by = "country_name") %>%
+  mutate(name = coalesce(name, country_name))
+
+leaflet_map_df <- left_join(world_sf, leaflet_df, by = "name")
+
+lf_labels <- sprintf(
+  "<strong>%s</strong><br/>%s<br/>Interest: %g%%",
+  leaflet_map_df$name,
+  leaflet_map_df$region,
+  round(leaflet_map_df$prop * 100, 1)
+) %>% lapply(htmltools::HTML)
+
+pal <- colorNumeric(
+  palette = "YlGnBu",
+  domain = leaflet_df$prop
+)
+```
+
+*Used ChatGPT to help with the above code for labeling. I could not have done the labels without it*
+
+```{r}
+#| label: second-improved-visualization (part 2)
+
+leaflet(leaflet_map_df) %>%
+  addTiles() %>%
+  addPolygons(
+    fillColor = ~pal(prop),
+    color = "white",
+    weight = 0.5,
+    fillOpacity = 0.8,
+    label = lf_labels,
+    highlight = highlightOptions(
+      weight = 2,
+      color = "#666",
+      fillOpacity = 0.9,
+      bringToFront = TRUE
+    )
+  )
 ```
 
 ## Third Data Visualization Improvement
 
 **For this third plot, you must use one of the other `ggplot2` extension packages mentioned this week (e.g., `gganimate`, `plotly`, `patchwork`, `cowplot`).**
- 
-13. Select a data visualization in the report that you think could be improved. 
-Be sure to cite both the page number and figure title. Do your best to tell the
-story of this graph in words. That is, what is this graph telling you? What do
-you think the authors meant to convey with it?
 
+13. Select a data visualization in the report that you think could be improved. Be sure to cite both the page number and figure title. Do your best to tell the story of this graph in words. That is, what is this graph telling you? What do you think the authors meant to convey with it?
 
+The graph I chose was chart 2.15 called Scatterplot exploring interest in science by those who have sought information. It appears on page 40. The graph shows on the x-axis the percentage of people in a country who say they want to know more about science. The y-axis shows the percentage of people in that same country who say they've sought science information in the past 30 days. Each square represents a country, and the dashed lines show the medians of people who want to learn more and people who have actually looked up science info. I think that the authors are trying to show that the interest in science is high globally, whereas the engagement is limited. I think there is a gap between desire and action in terms of science education.
 
 14. List the variables that appear to be displayed in this visualization.
 
+The variables that seem to appear in the displayed visualization are country, where each dot represents a country. The percentage who would like to know more about science which is on the x-axis and the percentage who have sought science information in the last 30 days which is on the y-axis.
 
+15. Now that you're versed in the grammar of graphics (ggplot), list the aesthetics used and which variables are specified for each.
 
-15. Now that you're versed in the grammar of graphics (ggplot), list the
-aesthetics used and which variables are specified for each.
-
-
+The x aesthetic is percentage who would like to know more about science, the y aesthetic is percentage who have sought science information in the last 30 days. There is also maybe some label aesthetic that has certain countries on the scatterplot labeled.
 
 16. What type of graph would you call this?
 
+This is a scatterplot or dotplot as stated in the title in the book.
 
-
-17. List all of the problems or things you would improve about this graph.  
+17. List all of the problems or things you would improve about this graph.\
+    There is no interaction with the plot so aside from the labeled countries its hard to gauge where certain regions are concentrated or where your individual country may lie. Similar to the last point but we just get one color across all these points. With color we could separate countries by the quadrants or by region or some other meaningful statistic that would help the viewer gain another story from this plot. The question in the subtitle is misleading as this was not the question(s) that are being displayed in the plot. To improve this plot I would make it interactive so you could hover over individual points and gain the necessary information from each. I would also try and add some sort of region aesthetic so we can paint a picture consistently with the previous graphs of how each region is doing.
 
 18. Improve the visualization above by either re-creating it with the issues you identified fixed OR by creating a new visualization that you believe tells the same story better.
 
 ```{r}
 #| label: third-improved-visualization
 
+df1 <- wgm2018_joined %>%
+  filter(!is.na(Q6)) %>%
+  group_by(country_name) %>%
+  summarise(
+    prop_Q6 = mean(Q6 == 1)
+  )
 
+df2 <- wgm2018_joined %>%
+  filter(!is.na(Q8)) %>%
+  group_by(country_name) %>%
+  summarise(
+    prop_Q8 = mean(Q8 == 1)
+  )
+
+region_df <- wgm2018_joined %>%
+  select(country_name, region) %>%
+  distinct()
+
+final_df <- df1 %>%
+  left_join(df2, by = "country_name") %>%
+  left_join(region_df, by = "country_name") %>%
+  mutate(
+    info_pct = prop_Q6 *100,
+    knowmore_pct = prop_Q8 * 100
+  )
+```
+
+```{r}
+
+library(plotly)
+
+x_median <- median(final_df$knowmore_pct, na.rm = TRUE)
+y_median <- median(final_df$info_pct, na.rm = TRUE)
+
+p <- ggplot(final_df, aes(
+  x = knowmore_pct, 
+  y = info_pct, 
+  color = region,
+  text = paste0(
+    "<b>", country_name, "</b><br>",
+    "Science Interest: ", round(knowmore_pct, 1), "%<br>",
+    "Information Seeking: ", round(info_pct, 1), "%<br>",
+    "Region: ", region
+  )
+  )) +
+  geom_point(alpha = 0.8) + 
+  geom_vline(xintercept = x_median, 
+             linetype = "dashed", 
+             color = "gray40") +
+  geom_hline(yintercept = y_median, 
+             linetype = "dashed", 
+             color = "gray40") + 
+  scale_color_brewer(palette = "Set2") +
+  labs(
+    x = NULL,
+    y = NULL,
+    subtitle = "Each point represents a country, colored by region",
+    title = "Science Interest vs. Information Seeking"
+  ) +
+  theme_minimal() + 
+  theme(
+    plot.title.position = "plot",
+    legend.position = "none"
+  )
+
+p <- p +
+  annotate("text", 
+           x = x_median + 1.5, 
+           y = min(final_df$info_pct, na.rm = TRUE), 
+           label = paste0("Median = ", round(x_median, 1), "%"), 
+           hjust = 0, 
+           size = 3.5,
+           color = "gray30") +
+  annotate("text", 
+           x = 40, 
+           y = y_median + 1.5,
+           hjust = 0,
+           size = 3.5,
+           label = paste0("Median = ", round(y_median, 1), "%"), 
+           color = "gray30")
+
+
+ggplotly(p, tooltip = "text")
 ```
